@@ -76,6 +76,19 @@ func (node *Element) AddChild(child *Element) *Element {
 	return node
 }
 
+// GetAttr returns all the matching Attrs on the node.
+func (node *Element) GetAttr(name, space, val string) []xml.Attr {
+	res := []xml.Attr{}
+	for i := range node.Attributes {
+		if (name == "*" || name == node.Attributes[i].Name.Local) &&
+			(space == "*" || space == node.Attributes[i].Name.Space) &&
+			(val == "*" || val == node.Attributes[i].Value) {
+			res = append(res, node.Attributes[i])
+		}
+	}
+	return res
+}
+
 // AddChildren adds children to node.
 // The children will be reparented as needed.
 // The return value is node.
@@ -97,6 +110,7 @@ func (node *Element) Replace(other *Element) *Element {
 	node.AddChildren(other.children...)
 	return node
 }
+
 // RemoveChild removes child from node.  The removed child
 // will be returned if it was actually a child of node, otherwise
 // nil will be returned.

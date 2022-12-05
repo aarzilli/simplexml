@@ -38,6 +38,17 @@ func parseElement(decoder *xml.Decoder, tok xml.StartElement) (res *Element, err
 	}
 }
 
+// ParseOptions specifies some parsing options.
+type ParseOptions struct {
+	CharsetReader func(string, io.Reader)(io.Reader,error)
+}
+
+func defaultOptions() *ParseOptions {
+	return &ParseOptions{
+		CharsetReader: func(s string, r io.Reader)(io.Reader,error){ return r,nil },
+	}
+}
+
 // ParseElements parses the XML elements in the passed io.Reader
 // and returns an array of parsed Elements and an error.  If error
 // is not nil, then all the elements in the Reader were parsed
@@ -46,10 +57,18 @@ func parseElement(decoder *xml.Decoder, tok xml.StartElement) (res *Element, err
 // This assumes our input is always UTF-8, no matter what lies
 // the <?xml?> header says.
 func ParseElements(r io.Reader) (elements []*Element, err error) {
+	return ParseElementsWithOptions(r, defaultOptions())
+}
+
+// ParseElementsWithCharsetReader is like ParseElements but more options can
+// be specified.
+func ParseElementsWithOptions(r io.Reader, opts *ParseOptions) (elements []*Element, err error) {
+	if opts == nil {
+		opts = defaultOptions()
+	}
 	decoder := xml.NewDecoder(r)
 	decoder.Strict = true
-	// Lie like a rug and assume no character set translation is needed.
-	decoder.CharsetReader = func(s string, r io.Reader)(io.Reader,error){ return r,nil }
+	decoder.CharsetReader = opts.CharsetReader
 	elements = []*Element{}
 	for {
 		tok, err := decoder.Token()
@@ -75,7 +94,12 @@ func ParseElements(r io.Reader) (elements []*Element, err error) {
 // returns either a Document or an error if the io.Reader stream
 // could not be parsed as a well-formed XML document.
 func Parse(r io.Reader) (doc *Document, err error) {
-	elements, err := ParseElements(r)
+	return ParseWithOptions(r, defaultOptions())
+}
+
+// ParseWithOptions is like Parse but more options can be specified.
+func ParseWithOptions(r io.Reader, opts *ParseOptions) (doc *Document, err error) {
+	elements, err := ParseElementsWithOptions(r, opts)
 	if err != nil {
 		return nil, err
 	}
